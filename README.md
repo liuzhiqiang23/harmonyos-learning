@@ -18,11 +18,19 @@ harmonyos-learning/
 
 | 项 | 版本/说明 |
 |----|-----------|
-| DevEco Studio | 6.0.2.670 Release（2026-08-31，HarmonyOS 6 / NEXT 线） |
+| DevEco Studio | 6.0.2 Release / Build 6.0.2.670（2026-08-31），装在 `D:\DevEco Studio` |
+| HarmonyOS SDK | API 22（HarmonyOS 6.0.2 Release，SDK 6.0.2.130），随 IDE 内置，无需另下 |
+| hvigor | 6.22.9（内置 `tools\hvigor`）；内置 Node.js v18.20.1 |
 | 开发语言 | ArkTS（Stage 模型） |
 | 机器 | Windows 11 / 16GB（模拟器吃紧时用远程模拟器） |
 
 > 教材若基于旧 API（API 9 / FA 模型），以 DevEco 最新版 + Stage 模型写法为准。
+
+## 工程
+
+| 工程 | 说明 |
+|------|------|
+| [projects/HelloWorld](projects/HelloWorld) | ArkTS + Stage 模型 Empty Ability 起步工程（API 22），命令行 `assembleHap` 编译已通过 |
 
 ## 常用命令
 
@@ -33,6 +41,12 @@ git push origin main
 # 只推某一家
 git push github main
 git push gitee  main
+
+# 命令行编译工程（不开 IDE，用来验证环境）
+cd projects/HelloWorld
+export DEVECO_SDK_HOME="D:\DevEco Studio\sdk"
+"/d/DevEco Studio/tools/node/node.exe" "/d/DevEco Studio/tools/hvigor/bin/hvigorw.js" \
+    assembleHap --mode module -p product=default -p module=entry@default --no-daemon
 ```
 
 ## 相关资源
