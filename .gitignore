@@ -1,0 +1,24 @@
+# DevEco Studio / HarmonyOS 工程忽略项
+build/
+.hvigor/
+oh_modules/
+.cxx/
+.idea/
+*.iml
+local.properties
+**/build/**
+**/oh_modules/**
+**/.hvigor/**
+.cxx
+.AppProfiler
+.appanalyzer
+*.hap
+*.app
+*.har
+*.hsp
+
+# 系统与编辑器
+Thumbs.db
+Desktop.ini
+.DS_Store
+*.log
