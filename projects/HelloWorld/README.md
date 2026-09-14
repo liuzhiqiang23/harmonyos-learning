@@ -66,6 +66,18 @@ export DEVECO_SDK_HOME="D:\DevEco Studio\sdk"
 `2300997` = 明文 HTTP 被拦截（加 `network_config.json` 放开 cleartext，本项目默认没加，因为默认允许）；
 其他大多是后端没启动 / 端口被占 / 地址写错。
 
+### 搜索与推荐页（顺便练 router 页面跳转）
+
+- 首页顶部有**搜索框**：走同一个 `page/list` 接口，多传 `videoName` 字段（后端模糊匹配）。输入留空点搜索 = 显示全部。
+- 右上角「猜你喜欢」→ 跳转 `pages/Recommend`（`router.pushUrl`；页面必须先在
+  `resources/base/profile/main_pages.json` 里注册，漏了会直接白屏报路由找不到）。
+- 推荐接口 `POST /api/recommend`，`algo` 必填：
+  - `demographic` 热门推荐，不用参数，最快；
+  - `content` 相似电影，**只认英文原名**——输中文名会报 `Movie title not found in dataset`（算法数据集是英文的）；
+  - `user_knn / svd / knn_svd` 还要传 `userId`。
+- 推荐是**现场拉起 Python 引擎**算的，比普通接口慢一个量级，所以 `readTimeout` 给到 60s。
+- `router` 在新 API 里已标 deprecated（官方推 Navigation），但教材用的就是 router，先沿用，编译只有 WARN 没有错。
+
 ### 离线兜底
 
 `backend-demo/`（仓库根目录）里有一个纯标准库的 toy 后端，返回 8 条假电影。

@@ -1,7 +1,8 @@
 import { http } from '@kit.NetworkKit';
 import { BusinessError } from '@kit.BasicServicesKit';
+import { router } from '@kit.ArkUI';
 
-// movie-system 后端（Spring Boot，跑在 8000 端口）。
+// movie-system 后端（Spring Boot，8000 端口）。
 // 真机调试时把 127.0.0.1 换成电脑的局域网地址。
 const API_BASE: string = 'http://127.0.0.1:8000';
 const PAGE_SIZE: number = 20;
@@ -41,6 +42,8 @@ struct Index {
   @State pageIndex: number = 1;
   @State totalPages: number = 0;
   @State total: number = 0;
+  @State input: string = '';
+  @State keyword: string = '';
 
   aboutToAppear(): void {
     this.loadPage(1);
@@ -48,13 +51,25 @@ struct Index {
 
   loadPage(page: number): void {
     this.loading = true;
-    this.status = '正在请求第 ' + page + ' 页 ...';
+    if (this.keyword === '') {
+      this.status = '正在请求第 ' + page + ' 页 ...';
+    } else {
+      this.status = '正在搜索「' + this.keyword + '」第 ' + page + ' 页 ...';
+    }
+
+    // 手工拼 JSON，避免 ArkTS 对对象字面量的限制；引号要转义防止破坏 JSON
+    let body = '{"pageIndex":' + page + ',"pageSize":' + PAGE_SIZE;
+    const kw = this.keyword.split('"').join('\\"');
+    if (kw !== '') {
+      body += ',"videoName":"' + kw + '"';
+    }
+    body += '}';
 
     const req = http.createHttp();
     req.request(API_BASE + '/api/admin/video/page/list', {
       method: http.RequestMethod.POST,
       header: { 'Content-Type': 'application/json' },
-      extraData: JSON.stringify({ pageIndex: page, pageSize: PAGE_SIZE }),
+      extraData: body,
       connectTimeout: 8000,
       readTimeout: 10000,
       expectDataType: http.HttpDataType.STRING
@@ -62,7 +77,6 @@ struct Index {
       this.loading = false;
 
       if (err) {
-        // 把失败原因直接显示出来，方便排查（后端没启动、端口错、明文HTTP被拦等）
         this.status = '请求失败：' + JSON.stringify(err);
         req.destroy();
         return;
@@ -75,7 +89,6 @@ struct Index {
       try {
         const parsed = JSON.parse(resp.result as string) as RestResponse;
         if (parsed.code !== 1) {
-          // 后端的业务错误也带着 HTTP 200 返回，必须看 code
           this.status = '后端返回错误：code=' + parsed.code + ' ' + parsed.message;
           req.destroy();
           return;
@@ -84,8 +97,13 @@ struct Index {
         this.pageIndex = parsed.response.pageNum;
         this.totalPages = parsed.response.pages;
         this.total = parsed.response.total;
-        this.status = '第 ' + this.pageIndex + ' / ' + this.totalPages + ' 页，共 '
-          + this.total + ' 部（本页 ' + this.movies.length + ' 条）';
+        if (this.keyword === '') {
+          this.status = '第 ' + this.pageIndex + ' / ' + this.totalPages + ' 页，共 '
+            + this.total + ' 部（本页 ' + this.movies.length + ' 条）';
+        } else {
+          this.status = '「' + this.keyword + '」共 ' + this.total + ' 条，第 '
+            + this.pageIndex + ' / ' + this.totalPages + ' 页';
+        }
       } catch (e) {
         this.status = '解析 JSON 失败：' + JSON.stringify(e);
       }
@@ -93,11 +111,16 @@ struct Index {
     });
   }
 
+  doSearch(): void {
+    this.keyword = this.input.trim();
+    this.loadPage(1);
+  }
+
   @Builder
   movieItem(m: Movie) {
     Row({ space: 12 }) {
       // 海报：文件名就是 videoId（TMDB 影片 ID）。
-      // 注意不是每部都有海报，缺图时接口返回的是 JSON 错误，所以要用 alt 兜底占位图。
+      // 不是每部都有海报，缺图时接口返回的是 JSON 错误，所以要用 alt 兜底占位图。
       Image(API_BASE + '/posters/' + m.videoId + '.jpg')
         .width(64)
         .height(90)
@@ -130,7 +153,34 @@ struct Index {
 
   build() {
     Column({ space: 10 }) {
-      Text('电影列表').fontSize(22).fontWeight(FontWeight.Bold)
+      Row({ space: 8 }) {
+        Text('电影列表').fontSize(22).fontWeight(FontWeight.Bold).layoutWeight(1)
+
+        Button('猜你喜欢')
+          .fontSize(14)
+          .onClick(() => {
+            router.pushUrl({ url: 'pages/Recommend' });
+          })
+      }
+      .width('100%')
+
+      Row({ space: 8 }) {
+        TextInput({ placeholder: '按片名搜索（留空=全部）', text: this.input })
+          .layoutWeight(1)
+          .onChange((value: string) => {
+            this.input = value;
+          })
+          .onSubmit(() => {
+            this.doSearch();
+          })
+
+        Button('搜索')
+          .enabled(!this.loading)
+          .onClick(() => {
+            this.doSearch();
+          })
+      }
+      .width('100%')
 
       Text(this.status)
         .fontSize(12)
