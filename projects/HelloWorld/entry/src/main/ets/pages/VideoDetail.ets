@@ -43,7 +43,9 @@ struct VideoDetail {
   @State detail: MovieDetail = new MovieDetail();
   @State status: string = '正在加载详情...';
   @State loaded: boolean = false;
-  @State playTimes: number = -1;   // -1 = 后端没有播放记录
+  @State playTimes: number = -1;        // -1 = 后端没有播放记录
+  @State posterFailed: boolean = false; // 海报文件不存在时兜底成占位块
+  @State showPoster: boolean = false;   // 全屏看大图
   private videoId: number = 0;
 
   aboutToAppear(): void {
@@ -103,6 +105,10 @@ struct VideoDetail {
     });
   }
 
+  posterUrl(): string {
+    return API_BASE + '/posters/' + this.videoId + '.jpg';
+  }
+
   @Builder
   field(label: string, value: string) {
     Row({ space: 8 }) {
@@ -112,104 +118,164 @@ struct VideoDetail {
     .width('100%')
   }
 
-  build() {
-    Column({ space: 10 }) {
-      Row({ space: 8 }) {
-        Button('← 返回')
-          .fontSize(14)
-          .onClick(() => {
-            router.back();
+  // 列表里那一小块海报：点了就全屏看大图。
+  // 本地海报只有 4891 张、影片有 4908 部，缺图的那些后端会返回 200 + 一段 JSON 错误
+  // （不是 404），图片解码会失败，所以用 onError 换成占位块，别让桌面图标被拉成海报。
+  @Builder
+  posterThumb() {
+    if (this.posterFailed) {
+      Column() {
+        Text('暂无海报').fontSize(12).fontColor('#999999')
+      }
+      .width(110)
+      .height(160)
+      .backgroundColor('#EDEDED')
+      .borderRadius(8)
+      .justifyContent(FlexAlign.Center)
+    } else {
+      Stack({ alignContent: Alignment.TopStart }) {
+        Image(this.posterUrl())
+          .width(110)
+          .height(160)
+          .objectFit(ImageFit.Cover)
+          .borderRadius(8)
+          .onError(() => {
+            this.posterFailed = true;
           })
 
-        Text('影片详情').fontSize(20).fontWeight(FontWeight.Bold).layoutWeight(1)
+        Text('点击看大图')
+          .fontSize(10)
+          .fontColor('#FFFFFF')
+          .backgroundColor('#66000000')
+          .padding({ left: 6, right: 6, top: 3, bottom: 3 })
+          .borderRadius(4)
+          .margin({ left: 6, top: 6 })
       }
-      .width('100%')
+      .width(110)
+      .height(160)
+      .onClick(() => {
+        this.showPoster = true;
+      })
+    }
+  }
 
-      if (this.status !== '') {
-        Text(this.status)
-          .fontSize(13)
-          .fontColor('#888888')
-          .width('100%')
-      }
+  build() {
+    Stack() {
+      Column({ space: 10 }) {
+        Row({ space: 8 }) {
+          Button('← 返回')
+            .fontSize(14)
+            .onClick(() => {
+              router.back();
+            })
 
-      if (this.loaded) {
-        Scroll() {
-          Column({ space: 12 }) {
-            Row({ space: 12 }) {
-              Image(API_BASE + '/posters/' + this.detail.videoId + '.jpg')
-                .width(110)
-                .height(160)
-                .objectFit(ImageFit.Cover)
-                .borderRadius(8)
-                .alt($r('app.media.icon'))
+          Text('影片详情').fontSize(20).fontWeight(FontWeight.Bold).layoutWeight(1)
+        }
+        .width('100%')
 
-              Column({ space: 8 }) {
-                Text(this.detail.videoName)
-                  .fontSize(19)
-                  .fontWeight(FontWeight.Bold)
-                  .maxLines(3)
-                  .textOverflow({ overflow: TextOverflow.Ellipsis })
-
-                if (this.detail.originalTitle) {
-                  Text(this.detail.originalTitle)
-                    .fontSize(13)
-                    .fontColor('#777777')
-                    .maxLines(2)
-                    .textOverflow({ overflow: TextOverflow.Ellipsis })
-                }
-
-                Text('评分 ' + this.detail.voteAverage.toFixed(1))
-                  .fontSize(15)
-                  .fontColor('#E64545')
-                  .fontWeight(FontWeight.Bold)
-
-                Text('热度 ' + this.detail.popularity.toFixed(1))
-                  .fontSize(13)
-                  .fontColor('#999999')
-              }
-              .alignItems(HorizontalAlign.Start)
-              .layoutWeight(1)
-            }
+        if (this.status !== '') {
+          Text(this.status)
+            .fontSize(13)
+            .fontColor('#888888')
             .width('100%')
+        }
 
-            if (this.detail.tagline) {
-              Text(this.detail.tagline)
-                .fontSize(13)
-                .fontColor('#666666')
-                .fontStyle(FontStyle.Italic)
+        if (this.loaded) {
+          Scroll() {
+            Column({ space: 12 }) {
+              Row({ space: 12 }) {
+                this.posterThumb()
+
+                Column({ space: 8 }) {
+                  Text(this.detail.videoName)
+                    .fontSize(19)
+                    .fontWeight(FontWeight.Bold)
+                    .maxLines(3)
+                    .textOverflow({ overflow: TextOverflow.Ellipsis })
+
+                  if (this.detail.originalTitle) {
+                    Text(this.detail.originalTitle)
+                      .fontSize(13)
+                      .fontColor('#777777')
+                      .maxLines(2)
+                      .textOverflow({ overflow: TextOverflow.Ellipsis })
+                  }
+
+                  Text('评分 ' + this.detail.voteAverage.toFixed(1))
+                    .fontSize(15)
+                    .fontColor('#E64545')
+                    .fontWeight(FontWeight.Bold)
+
+                  Text('热度 ' + this.detail.popularity.toFixed(1))
+                    .fontSize(13)
+                    .fontColor('#999999')
+                }
+                .alignItems(HorizontalAlign.Start)
+                .layoutWeight(1)
+              }
+              .width('100%')
+
+              if (this.detail.tagline) {
+                Text(this.detail.tagline)
+                  .fontSize(13)
+                  .fontColor('#666666')
+                  .fontStyle(FontStyle.Italic)
+                  .width('100%')
+              }
+
+              Divider()
+
+              this.field('上映日期', this.detail.releaseDate ? this.detail.releaseDate : '后端未提供')
+              this.field('影片 ID', this.detail.videoId.toString())
+              this.field('播放次数', this.playTimes < 0 ? '暂无播放记录' : this.playTimes + ' 次')
+
+              Divider()
+
+              Text('剧情简介').fontSize(15).fontWeight(FontWeight.Bold).width('100%')
+              Text(this.detail.overview ? this.detail.overview : '后端没有这部片的中文简介。')
+                .fontSize(14)
+                .lineHeight(22)
+                .width('100%')
+
+              Text('说明：这批影片只存了元数据，没有实际视频文件，所以详情页不做播放。')
+                .fontSize(12)
+                .fontColor('#AAAAAA')
                 .width('100%')
             }
-
-            Divider()
-
-            this.field('上映日期', this.detail.releaseDate ? this.detail.releaseDate : '后端未提供')
-            this.field('影片 ID', this.detail.videoId.toString())
-            this.field('播放次数', this.playTimes < 0 ? '暂无播放记录' : this.playTimes + ' 次')
-
-            Divider()
-
-            Text('剧情简介').fontSize(15).fontWeight(FontWeight.Bold).width('100%')
-            Text(this.detail.overview ? this.detail.overview : '后端没有这部片的中文简介。')
-              .fontSize(14)
-              .lineHeight(22)
-              .width('100%')
-
-            Text('说明：这批影片只存了元数据，没有实际视频文件，所以详情页不做播放。')
-              .fontSize(12)
-              .fontColor('#AAAAAA')
-              .width('100%')
+            .width('100%')
+            .padding({ bottom: 20 })
           }
+          .layoutWeight(1)
           .width('100%')
-          .padding({ bottom: 20 })
+        } else {
+          Blank().layoutWeight(1)
         }
-        .layoutWeight(1)
+      }
+      .width('100%')
+      .height('100%')
+      .padding(16)
+
+      // 全屏看大图：黑底 + 按比例完整显示（Contain 才不会被裁掉），点任意处关闭
+      if (this.showPoster) {
+        Column({ space: 16 }) {
+          Image(this.posterUrl())
+            .width('92%')
+            .objectFit(ImageFit.Contain)
+
+          Text('点击任意位置关闭')
+            .fontSize(13)
+            .fontColor('#BBBBBB')
+        }
         .width('100%')
-      } else {
-        Blank().layoutWeight(1)
+        .height('100%')
+        .backgroundColor('#000000')
+        .justifyContent(FlexAlign.Center)
+        .onClick(() => {
+          this.showPoster = false;
+        })
       }
     }
     .width('100%')
     .height('100%')
-    .padding(16)
   }
 }

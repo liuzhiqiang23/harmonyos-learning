@@ -67,7 +67,10 @@ export DEVECO_SDK_HOME="D:\DevEco Studio\sdk"
 
 **如果状态行显示 `请求失败`**：读 `JSON.stringify(err)` 里的 `code`。
 `2300997` = 明文 HTTP 被拦截（加 `network_config.json` 放开 cleartext，本项目默认没加，因为默认允许）；
-其他大多是后端没启动 / 端口被占 / 地址写错。
+**`2300028` = Operation timeout，最常见的原因是 movie-system 后端没在跑**（模拟器/真机连不上它），
+去 `D:\movie-system` 双击 `restart_backend.cmd` 拉起来（它会检查 MySQL/Redis、杀占用 8000 的进程、
+用 `mvn spring-boot:run` 后台启动并做健康检查，日志在 `D:\movie-system\_boot.log`）；
+其他大多是端口被占 / 地址写错。
 
 ### 搜索与推荐页（顺便练 router 页面跳转）
 
@@ -94,6 +97,11 @@ export DEVECO_SDK_HOME="D:\DevEco Studio\sdk"
   很容易看岔）。改成 `extraData: '{}'` 就通了。后端没有 `@RequestBody`，请求体会被忽略。
 - 详情接口不返回 `videoUrl`，而且这批影片的 `videoUrl` 本来就是 null（只存了 TMDB 元数据，
   没有实际视频文件），所以详情页只做信息展示，不做播放器。
+- **海报可以点开看大图**：详情页左侧那张小海报点了会弹出全屏黑底遮罩（`ImageFit.Contain`
+  等比完整显示、不裁切），点任意位置关闭。角标写着「点击看大图」提示可点。
+- 本地海报只有 4891 张、影片有 4908 部，缺图的那些点了会看到灰色「暂无海报」占位块：
+  后端对缺图返回的是 **200 + 一段 JSON 错误**（不是 404），图片解码失败，所以用
+  `Image.onError` 兜底，不能只靠 `.alt()`——`.alt()` 会把桌面图标拉伸成海报那么大的方块，很难看。
 
 ## 部署到模拟器（免签名，一键脚本）
 
