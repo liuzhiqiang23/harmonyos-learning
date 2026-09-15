@@ -2,6 +2,7 @@
   "src": [
     "pages/Index",
     "pages/Recommend",
-    "pages/VideoDetail"
+    "pages/VideoDetail",
+    "pages/Snake"
   ]
 }

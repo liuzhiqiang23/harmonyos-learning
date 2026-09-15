@@ -5,7 +5,8 @@
 首页 `Index.ets` 是一个**带海报的电影列表**，数据来自本机真实运行的 **movie-system**
 后端（Spring Boot，8000 端口），支持分页。最早那版 Hello World 保留在 git 历史里（提交 `de42402`）。
 
-现在是三个页面：`Index`（列表 + 搜索）和 `Recommend`（推荐）都可以点进 `VideoDetail`（影片详情）。
+现在是四个页面：`Index`（列表 + 搜索）和 `Recommend`（推荐）都可以点进 `VideoDetail`（影片详情），
+外加一个纯本地的 `Snake`（贪吃蛇小游戏，不依赖后端）。
 
 ## 环境（本机实测）
 
@@ -103,6 +104,21 @@ export DEVECO_SDK_HOME="D:\DevEco Studio\sdk"
   后端对缺图返回的是 **200 + 一段 JSON 错误**（不是 404），图片解码失败，所以用
   `Image.onError` 兜底，不能只靠 `.alt()`——`.alt()` 会把桌面图标拉伸成海报那么大的方块，很难看。
 
+## 贪吃蛇小游戏（`pages/Snake.ets`）
+
+首页右上角「小游戏」进入。**纯 ArkUI Canvas 手写，没有用游戏引擎，也不连后端**，断网照样玩。
+
+- 棋盘 20×20 格，每 **200ms** 走一格（`setInterval`）。选这个节奏是因为它**不依赖每帧动画**——
+  模拟器很卡也不会崩，比打砖块那种每帧算物理的游戏适合在模拟器上跑得多。
+- 操作：屏幕方向键 `▲◀▼▶`，加「开始 / 暂停 / 重开」。**方向键按钮而不是滑动手势**，
+  一是手机上更好按，二是能用 `uitest uiInput click` 自动化点击来验证游戏逻辑。
+- `dir` 和 `pending` 两个方向变量分开存：`dir` 是上一帧实际走的方向，`pending` 是玩家按下的下一个。
+  合并成一个的话，快速连按两次能骗过"不能原地掉头"的判断、直接咬到自己。
+- 自己撞自己判定的循环要**排除最后一节**（`length - 1`）：尾巴这一帧会移走，走进它原来的格子是合法的。
+- **离开页面必须 `clearInterval`**（放在 `aboutToDisappear`），否则返回列表后定时器还在后台跑。
+- Canvas 是命令式绘制，`@State` 变化不会自动重画，要在每个改变状态的函数末尾自己调 `draw()`；
+  但 `onReady` 之前 `ctx.width` 取不到值，所以用了一个 `ready` 标志挡住早期调用。
+
 ## 部署到模拟器（免签名，一键脚本）
 
 **模拟器不需要华为账号、也不需要签名**——用 `hdc` 直接装未签名 HAP 就能跑（实测通过）。
@@ -148,6 +164,7 @@ entry/src/main/ets/entryability/EntryAbility.ets   UIAbility 生命周期入口
 entry/src/main/ets/pages/Index.ets                 首页：电影列表 + 搜索（调 movie-system）
 entry/src/main/ets/pages/Recommend.ets             推荐页：热门推荐 / 相似电影
 entry/src/main/ets/pages/VideoDetail.ets           详情页：片名/原名/简介/评分/上映日期
+entry/src/main/ets/pages/Snake.ets                 贪吃蛇小游戏（纯 Canvas，不连后端）
 entry/src/main/module.json5                        模块配置（abilities/pages/权限）
 entry/src/main/resources/base/                     本模块字符串/颜色/尺寸/图标
 AppScope/app.json5                                 应用级配置（bundleName/版本/图标）

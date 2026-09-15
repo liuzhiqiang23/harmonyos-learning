@@ -163,6 +163,12 @@ struct Index {
       Row({ space: 8 }) {
         Text('电影列表').fontSize(22).fontWeight(FontWeight.Bold).layoutWeight(1)
 
+        Button('小游戏')
+          .fontSize(14)
+          .onClick(() => {
+            router.pushUrl({ url: 'pages/Snake' });
+          })
+
         Button('猜你喜欢')
           .fontSize(14)
           .onClick(() => {
