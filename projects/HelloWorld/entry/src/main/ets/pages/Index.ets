@@ -3,8 +3,10 @@ import { BusinessError } from '@kit.BasicServicesKit';
 import { router } from '@kit.ArkUI';
 
 // movie-system 后端（Spring Boot，8000 端口）。
-// 真机调试时把 127.0.0.1 换成电脑的局域网地址。
-const API_BASE: string = 'http://127.0.0.1:8000';
+// 用电脑的局域网 IP，不要用 127.0.0.1：预览器跑在电脑上两者都行，
+// 但模拟器/真机是独立设备，它们眼里的 127.0.0.1 是它们自己，必须走局域网 IP。
+// IP 变了（重启路由器/DHCP 换址）就改这里，ipconfig 看 WLAN 的 IPv4。
+const API_BASE: string = 'http://192.168.82.214:8000';
 const PAGE_SIZE: number = 20;
 
 // 列表接口返回的单条数据（对应后端 VideoResponseVM）

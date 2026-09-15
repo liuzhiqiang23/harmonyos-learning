@@ -6,7 +6,7 @@ import { router } from '@kit.ArkUI';
 // algo 取值：demographic(热门，不用参数) | content(相似电影，要英文片名)
 //            | user_knn/svd/knn_svd(要 userId) | movie_knn/keyword/usr_keywords…
 // 注意：推荐要现场拉起 Python 引擎算，比普通接口慢很多，超时要给足。
-const API_BASE: string = 'http://127.0.0.1:8000';
+const API_BASE: string = 'http://192.168.82.214:8000';  // 电脑局域网 IP，模拟器/真机才连得上
 
 // 推荐结果单条（后端 RecommendItemVM）。movieId 也是 TMDB 影片 ID，可直接拼海报地址。
 interface RecItem {
