@@ -148,6 +148,11 @@ struct Index {
       }
       .alignItems(HorizontalAlign.Start)
       .layoutWeight(1)
+
+      // 提示这一行可以点进详情
+      Text('›')
+        .fontSize(22)
+        .fontColor('#BBBBBB')
     }
     .width('100%')
     .padding(10)
@@ -197,6 +202,10 @@ struct Index {
           }
           .backgroundColor('#F7F7F7')
           .borderRadius(8)
+          .onClick(() => {
+            // videoId 直接传给详情页，它跟海报文件名是同一个号
+            router.pushUrl({ url: 'pages/VideoDetail', params: { videoId: m.videoId } });
+          })
         }, (m: Movie) => m.videoId.toString())
       }
       .layoutWeight(1)

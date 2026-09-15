@@ -5,6 +5,8 @@
 首页 `Index.ets` 是一个**带海报的电影列表**，数据来自本机真实运行的 **movie-system**
 后端（Spring Boot，8000 端口），支持分页。最早那版 Hello World 保留在 git 历史里（提交 `de42402`）。
 
+现在是三个页面：`Index`（列表 + 搜索）和 `Recommend`（推荐）都可以点进 `VideoDetail`（影片详情）。
+
 ## 环境（本机实测）
 
 | 项目 | 值 |
@@ -46,11 +48,12 @@ export DEVECO_SDK_HOME="D:\DevEco Studio\sdk"
    然后点预览器刷新。
 3. 界面上会出现：标题「电影列表」→ 状态行（`第 1 / 246 页，共 4908 部`）→ 带海报的列表 → 上一页 / 下一页。
 
-### 用到的两个接口
+### 用到的接口
 
 | 用途 | 请求 | 说明 |
 | --- | --- | --- |
 | 列表 | `POST /api/admin/video/page/list`，体 `{"pageIndex":1,"pageSize":20}` | 字段名是 **pageIndex**；写成 `pageNum` 后端会 500 NPE |
+| 详情 | `POST /api/admin/video/getVideoDetailByVideoId/{videoId}`，**无请求体** | 匿名可用（同组的 `select/{id}` 要登录态，会 500，别用）。返回片名/原名/简介/tagline/评分/热度/上映日期/播放记录 |
 | 海报 | `GET /posters/{videoId}.jpg` | `videoId` 就是 **TMDB 影片 ID**，海报是后端 `static/posters` 下的本地文件 |
 
 ### 三个必须知道的坑
@@ -77,6 +80,20 @@ export DEVECO_SDK_HOME="D:\DevEco Studio\sdk"
   - `user_knn / svd / knn_svd` 还要传 `userId`。
 - 推荐是**现场拉起 Python 引擎**算的，比普通接口慢一个量级，所以 `readTimeout` 给到 60s。
 - `router` 在新 API 里已标 deprecated（官方推 Navigation），但教材用的就是 router，先沿用，编译只有 WARN 没有错。
+
+### 详情页（列表和推荐都能点进去）
+
+- `pages/VideoDetail.ets`。跳转靠 `router.pushUrl({ url: 'pages/VideoDetail', params: { videoId: m.videoId } })`，
+  详情页再用 `router.getParams()` 把参数取回来。**列表里的 `videoId` 和推荐里的 `movieId` 是同一个东西**
+  （TMDB 影片 ID），和海报文件名也是同一个号，所以两个入口能共用一页。
+- 两个入口传参：列表项、推荐项各自点一下即可；列表项右侧的 `›` 是"可以点"的提示。
+- 推荐数据集里可能有库里没收录的片子，点进去会显示「视频不存在」——后端这时返回的是
+  **`code=404` 而不是 HTTP 404**，所以 `responseCode` 和 `code` 两层都得判。
+- **这里有个值得记的坑**：这个接口是 POST 但没有请求体，如果给 `extraData` 传空字符串 `''`，
+  HarmonyOS 的 http 会直接抛 `401 Parameter error`（**是鸿蒙自己的参数校验错误码，不是 HTTP 401**，
+  很容易看岔）。改成 `extraData: '{}'` 就通了。后端没有 `@RequestBody`，请求体会被忽略。
+- 详情接口不返回 `videoUrl`，而且这批影片的 `videoUrl` 本来就是 null（只存了 TMDB 元数据，
+  没有实际视频文件），所以详情页只做信息展示，不做播放器。
 
 ## 部署到模拟器（免签名，一键脚本）
 
@@ -120,7 +137,9 @@ movie-system 没启动时可以用它练手，但要改 `Index.ets` 的 `API_BAS
 
 ```
 entry/src/main/ets/entryability/EntryAbility.ets   UIAbility 生命周期入口
-entry/src/main/ets/pages/Index.ets                 首页：电影列表（调 movie-system）
+entry/src/main/ets/pages/Index.ets                 首页：电影列表 + 搜索（调 movie-system）
+entry/src/main/ets/pages/Recommend.ets             推荐页：热门推荐 / 相似电影
+entry/src/main/ets/pages/VideoDetail.ets           详情页：片名/原名/简介/评分/上映日期
 entry/src/main/module.json5                        模块配置（abilities/pages/权限）
 entry/src/main/resources/base/                     本模块字符串/颜色/尺寸/图标
 AppScope/app.json5                                 应用级配置（bundleName/版本/图标）

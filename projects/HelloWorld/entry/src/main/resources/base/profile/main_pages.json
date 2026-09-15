@@ -1,6 +1,7 @@
 {
   "src": [
     "pages/Index",
-    "pages/Recommend"
+    "pages/Recommend",
+    "pages/VideoDetail"
   ]
 }

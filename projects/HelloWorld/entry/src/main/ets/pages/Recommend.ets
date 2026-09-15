@@ -112,6 +112,10 @@ struct Recommend {
       }
       .alignItems(HorizontalAlign.Start)
       .layoutWeight(1)
+
+      Text('›')
+        .fontSize(22)
+        .fontColor('#BBBBBB')
     }
     .width('100%')
     .padding(10)
@@ -187,6 +191,11 @@ struct Recommend {
           }
           .backgroundColor('#F7F7F7')
           .borderRadius(8)
+          .onClick(() => {
+            // 推荐接口的 movieId 就是 videoId，可以直接进详情。
+            // 但推荐数据集里可能有库里没收录的片子，那种进去会显示"视频不存在"。
+            router.pushUrl({ url: 'pages/VideoDetail', params: { videoId: m.movieId } });
+          })
         }, (m: RecItem) => m.movieId.toString())
       }
       .layoutWeight(1)
