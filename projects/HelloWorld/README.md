@@ -78,6 +78,39 @@ export DEVECO_SDK_HOME="D:\DevEco Studio\sdk"
 - 推荐是**现场拉起 Python 引擎**算的，比普通接口慢一个量级，所以 `readTimeout` 给到 60s。
 - `router` 在新 API 里已标 deprecated（官方推 Navigation），但教材用的就是 router，先沿用，编译只有 WARN 没有错。
 
+## 部署到模拟器（免签名，一键脚本）
+
+**模拟器不需要华为账号、也不需要签名**——用 `hdc` 直接装未签名 HAP 就能跑（实测通过）。
+项目根目录有个一键脚本：
+
+```
+install-to-device.cmd      编译 → 安装 → 启动，三步一次搞定
+```
+
+它内部等价于：
+
+```bash
+hvigor assembleHap ...                                        # 编译
+hdc install -r entry\build\default\outputs\default\entry-default-unsigned.hap
+hdc shell "aa start -a EntryAbility -b com.liuzhiqiang.helloworld"
+```
+
+**两个 Git Bash 的坑**（在 cmd 里跑脚本不受影响，手动敲命令会遇到）：
+
+- `hdc file recv /data/...` 里的 `/data/...` 会被 MSYS 改写成 `C:/Program Files/Git/data/...`，
+  必须加 `MSYS_NO_PATHCONV=1`；
+- 路径参数要用反斜杠，PowerShell/Windows API 只吃反斜杠。
+
+**从命令行看模拟器画面**（不用截屏工具，也不需要视觉）：
+
+```bash
+hdc shell "snapshot_display -f /data/local/tmp/shot.jpeg"
+MSYS_NO_PATHCONV=1 hdc file recv /data/local/tmp/shot.jpeg D:\DevEco\shots\emu_shot.jpeg
+```
+
+> IDE 里点绿色 **Run** 走的是另一条路：要求签名、要登录华为账号。所以**模拟器调试用这个脚本更省事**；
+> 只有装**真机**才必须签名。
+
 ### 离线兜底
 
 `backend-demo/`（仓库根目录）里有一个纯标准库的 toy 后端，返回 8 条假电影。
