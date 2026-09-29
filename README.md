@@ -4,6 +4,8 @@ HarmonyOS 应用开发学习仓库 —— 专业课《移动互联网应用开�
 
 双平台托管：GitHub + Gitee（`git push origin main` 一次推两端）。
 
+> 📦 双平台同步：[Gitee](https://gitee.com/liu-zhiqiang20030520/harmonyos-learning) ｜ [GitHub](https://github.com/liuzhiqiang23/harmonyos-learning)
+
 ## 目录规划
 
 ```
