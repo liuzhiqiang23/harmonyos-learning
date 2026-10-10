@@ -1,5 +1,7 @@
 # harmonyos-learning
 
+**[English](./README_EN.md) | 中文**
+
 HarmonyOS 应用开发学习仓库 —— 专业课《移动互联网应用开发》（教材：HarmonyOS 应用开发基础）配套。
 
 双平台托管：GitHub + Gitee（`git push origin main` 一次推两端）。
